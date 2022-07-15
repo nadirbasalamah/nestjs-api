@@ -10,6 +10,10 @@ import { Test } from '@nestjs/testing';
 import * as pactum from 'pactum';
 import { AppModule } from '../src/app.module';
 import { EditUserDto } from 'src/user/dto';
+import {
+  CreatePostDto,
+  EditPostDto,
+} from 'src/post/dto';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -248,6 +252,108 @@ describe('App e2e', () => {
         return pactum
           .spec()
           .get('/bookmarks')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectBody([]);
+      });
+    });
+  });
+
+  describe('Post', () => {
+    describe('Get empty posts', () => {
+      it('should get empty post', () => {
+        return pactum
+          .spec()
+          .get('/posts')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectBody([]);
+      });
+    });
+    describe('Create post', () => {
+      it('should create post', () => {
+        const dto: CreatePostDto = {
+          title: 'First post',
+          content: 'my first post ever',
+        };
+
+        return pactum
+          .spec()
+          .post('/posts')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .withBody(dto)
+          .expectStatus(201)
+          .expectBodyContains(dto.title)
+          .stores('postId', 'id');
+      });
+    });
+    describe('Get posts', () => {
+      it('should get posts', () => {
+        return pactum
+          .spec()
+          .get('/posts')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectJsonLength(1);
+      });
+    });
+    describe('Get post by ID', () => {
+      it('should get post by ID', () => {
+        return pactum
+          .spec()
+          .get('/posts/{id}')
+          .withPathParams('id', '$S{postId}')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(200)
+          .expectBodyContains('$S{postId}');
+      });
+    });
+    describe('Edit post by ID', () => {
+      it('should edit post by ID', () => {
+        const dto: EditPostDto = {
+          title: 'First post edited',
+          content: 'first post is edited',
+        };
+
+        return pactum
+          .spec()
+          .patch('/posts/{id}')
+          .withPathParams('id', '$S{postId}')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .withBody(dto)
+          .expectStatus(200)
+          .expectBodyContains(dto.title)
+          .expectBodyContains(dto.content);
+      });
+    });
+    describe('Delete post by ID', () => {
+      it('should delete post', () => {
+        return pactum
+          .spec()
+          .delete('/posts/{id}')
+          .withPathParams('id', '$S{postId}')
+          .withHeaders({
+            Authorization: 'Bearer $S{userAt}',
+          })
+          .expectStatus(204);
+      });
+
+      it('should get empty post', () => {
+        return pactum
+          .spec()
+          .get('/posts')
           .withHeaders({
             Authorization: 'Bearer $S{userAt}',
           })
